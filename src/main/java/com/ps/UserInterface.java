@@ -145,6 +145,15 @@ public class UserInterface {
         System.out.println("------ All Vehicles ------");
         displayVehicles(allVehicles);
     }
+
+    private void processCheckoutRequest(){
+
+        double downPayment = 0;
+        double interestRate = 0;
+    }
+
+
+
     public void processAddVehicleRequest(){
         System.out.print("VIN: ");
         int vin = scanner.nextInt();
