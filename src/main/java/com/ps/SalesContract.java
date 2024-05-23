@@ -1,4 +1,7 @@
 package com.ps;
+import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SalesContract extends Contract {
     private double salesTaxAmount;
@@ -7,7 +10,7 @@ public class SalesContract extends Contract {
     private boolean financeOption;
     private double monthlyPayment;
 
-    public SalesContract(String dateOfContract, String customerName, String customerEmail, Vehicle vehicle) {
+    public SalesContract(String dateOfContract, String customerName, String customerEmail, Vehicle vehicle, boolean financeOption) {
         super(dateOfContract, customerName, customerEmail, vehicle);
         this.salesTaxAmount = salesTaxAmount;
         this.recordingFee = recordingFee;
@@ -15,12 +18,12 @@ public class SalesContract extends Contract {
         this.financeOption = financeOption;
     }
 
-    public double getSaleTaxAmount() {
+    public double getSalesTaxAmount() {
         return salesTaxAmount;
     }
 
-    public void setSaleTaxAmount(double saleTaxAmount) {
-        this.salesTaxAmount = saleTaxAmount;
+    public void setSalesTaxAmount(double salesTaxAmount) {
+        this.salesTaxAmount = salesTaxAmount;
     }
 
     public double getRecordingFee() {
@@ -37,6 +40,11 @@ public class SalesContract extends Contract {
 
     public void setProcessingFee(double processingFee) {
         this.processingFee = processingFee;
+    }
+
+
+    public void setFinanceOption(boolean financeOption) {
+        this.financeOption = financeOption;
     }
 
     @Override
@@ -68,6 +76,10 @@ public class SalesContract extends Contract {
 
         double monthlyInterestRate = interestRate / 12;
         return (loanAmount * monthlyInterestRate) / (1 - Math.pow(1 + monthlyInterestRate, -term));
+    }
+
+    public boolean isFinanceOption() {
+        return financeOption;
     }
 
 }

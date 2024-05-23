@@ -4,14 +4,17 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.List;
 
+
 public class UserInterface {
     private Dealership dealership;
     private User currentUser;
     private Scanner scanner;
+    private ContractDataManager contractDataManager;
 
     // Constructor: Initializes the user interface.
     public UserInterface() {
         this.scanner = new Scanner(System.in);
+        this.contractDataManager = new ContractDataManager();
         this.currentUser = promptForUsername(); // Prompt for the username at the start
         init(); // Default user, implement login to change
 
@@ -32,7 +35,6 @@ public class UserInterface {
 
     // Display loop to handle user inputs.
     public void display() {
-        Scanner scanner = new Scanner(System.in);
         int choice;
 
         do {
@@ -51,6 +53,7 @@ public class UserInterface {
             System.out.println("99. Exit");
             System.out.print("Enter your choice: ");
             choice = scanner.nextInt();
+            scanner.nextLine();
 
             switch (choice) {
                 case 1:
@@ -110,9 +113,9 @@ public class UserInterface {
         double maxPrice = scanner.nextDouble();
 
         List<Vehicle> filteredVehicles = new ArrayList<>();
-        for (Vehicle v : dealership.getAllVehicles()) {
-            if (v.getPrice() >= minPrice && v.getPrice() <= maxPrice) {
-                filteredVehicles.add(v);
+        for (Vehicle vehicle : dealership.getAllVehicles()) {
+            if (vehicle.getPrice() >= minPrice && vehicle.getPrice() <= maxPrice) {
+                filteredVehicles.add(vehicle);
             }
         }
         displayVehicles(filteredVehicles);  // Display filtered vehicles
@@ -266,6 +269,9 @@ public class UserInterface {
         String purchaseType = scanner.next();
         scanner.nextLine(); // Consume the newline
 
+        System.out.print("Enter the date of contract (YYYY-MM-DD): ");
+        String dateOfContract = scanner.nextLine();
+
         if ("lease".equalsIgnoreCase(purchaseType)) {
             System.out.print("Enter the lease price: ");
             double leasePrice = scanner.nextDouble();
@@ -276,10 +282,11 @@ public class UserInterface {
             scanner.nextLine(); // Consume the newline
 
             LeaseContract leaseContract = new LeaseContract(
-                    currentUser.getUsername(), currentUser.getCustomerEmail(),
+                    dateOfContract, currentUser.getUsername(), currentUser.getEmail(),
                     vehicle, leasePrice, endOfLeasePurchasePrice
             );
 
+            contractDataManager.saveContract(leaseContract);
             currentUser.addPurchasedVehicle(vehicle);
             dealership.removeVehicle(vehicle);
             System.out.println("Vehicle leased successfully. Thank you!");
@@ -296,9 +303,14 @@ public class UserInterface {
                 System.out.print("Enter your credit score: ");
                 int creditScore = scanner.nextInt();
                 scanner.nextLine(); // Consume the newline
-                interestRate = determineInterestRate(creditScore);
 
-                System.out.println("The interest rate according to your credit score (" + creditScore + ") is " + interestRate + "%");
+                System.out.print("Enter your annual income: ");
+                double income = scanner.nextDouble();
+                scanner.nextLine(); // Consume the newline
+
+                interestRate = determineInterestRate(creditScore, income);
+
+                System.out.println("The interest rate according to your credit score (" + creditScore + ") and income (" + income + ") is " + interestRate + "%");
 
                 totalCost = vehicle.calculateTotalCost(downPayment, interestRate);
             }
@@ -310,19 +322,22 @@ public class UserInterface {
             scanner.nextLine(); // Consume the newline
 
             if ("yes".equalsIgnoreCase(checkoutConfirm)) {
+                SalesContract salesContract = new SalesContract(
+                        dateOfContract, currentUser.getUsername(), currentUser.getEmail(),
+                        vehicle, "finance".equalsIgnoreCase(purchaseType)
+                );
+
+                contractDataManager.saveContract(salesContract);
                 dealership.removeVehicle(vehicle);
                 currentUser.addPurchasedVehicle(vehicle);
                 System.out.println("Vehicle purchased successfully. Thank you!");
-                new DealershipFileManager().saveDealership(dealership, "B_Dealership.csv");
             } else {
                 System.out.println("Checkout canceled.");
             }
         }
     }
 
-    private void processViewMyPurchasedVehicles() {
-        currentUser.displayPurchasedVehicles();
-    }
+
 
     // Helper method to find a vehicle by its VIN
     private Vehicle findVehicleByVin(int vin) {
@@ -334,15 +349,38 @@ public class UserInterface {
         return null;
     }
 
-    // Helper method to determine the interest rate based on credit score
-    private double determineInterestRate(int creditScore) {
-        if (creditScore >= 750) return 3.5;
-        if (creditScore >= 700) return 4.0;
-        if (creditScore >= 650) return 4.5;
-        if (creditScore >= 600) return 5.0;
-        if (creditScore >= 550) return 5.5;
-        return 6.0;
+    private void processViewMyPurchasedVehicles() {
+        currentUser.displayPurchasedVehicles();
     }
+
+    // Helper method to determine the interest rate based on credit score and income
+    private double determineInterestRate(int creditScore, double income) {
+        double interestRate;
+
+        if (creditScore >= 750) {
+            interestRate = 3.5;
+        } else if (creditScore >= 700) {
+            interestRate = 4.0;
+        } else if (creditScore >= 650) {
+            interestRate = 4.5;
+        } else if (creditScore >= 600) {
+            interestRate = 5.0;
+        } else if (creditScore >= 550) {
+            interestRate = 5.5;
+        } else {
+            interestRate = 6.0;
+        }
+
+        // Adjust interest rate based on income
+        if (income < 45000) {
+            interestRate += 10.0; // Increase rate by 6% for low income
+        } else if (income < 55000) {
+            interestRate += 6.0; // Increase rate by 4% for moderate income
+        }
+
+        return interestRate;
+    }
+
 
     // Helper method to display a list of vehicles
     private void displayVehicles(List<Vehicle> vehicles) {
